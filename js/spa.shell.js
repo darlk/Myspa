@@ -63,8 +63,44 @@ spa.shell = (function () {
     //  * true  - slider animation activated
     //  * false - slider animation not activated
     toggleChat = function (do_extend, callback) {
-        var px_chat_ht = jqueryMap.$chat.height();
-    }
+        var px_chat_ht = jqueryMap.$chat.height(),
+            is_open = px_chat_ht === configMap.chat_extend_height,
+            is_closed = px_chat_ht === configMap.chat_retract_height,
+            is_sliding = !is_open && !is_closed;
+
+        // avoid race condition
+        if (is_sliding) {
+            return false;
+        }
+
+        // Begin extend chat slider
+        if (do_extend) {
+            jqueryMap.$chat.animate(
+                {height: configMap.chat_extend_height},
+                configMap.chat_extend_time,
+                function () {
+                    if (callback) {
+                        callback(jqueryMap.$chat);
+                    }
+                }
+            );
+            return true;
+        }
+        // End extend chat slider
+
+        // Begin retract chat slider
+        jqueryMap.$chat.animate(
+            {height: configMap.chat_retract_height},
+            configMap.chat_retract_time,
+            function () {
+                if (callback) {// Begin extend chat slider
+                    callback(jqueryMap.$chat);
+                }
+            }
+        );
+        return true;
+        // End retract chat slider
+    };
     // End DOM method /toggleChat/
 
     //-------------- END DOM METHODS -----------------------------
@@ -75,9 +111,18 @@ spa.shell = (function () {
     //-------------- BEGIN PUBLIC METHODS ------------------------
     // Begin Public method /initModule/
     initModule = function ($container) {
+        // load HTML and map jQuery collections
         stateMap.$container = $container;
         $container.html(configMap.main_html);
         setJqueryMap();
+
+        // test toggle
+        setTimeout(function () {
+            toggleChat(true);
+        }, 3000);
+        setTimeout(function () {
+            toggleChat(false);
+        }, 8000)
     };
     // End Public method /initModule/
 
